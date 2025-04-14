@@ -1,5 +1,6 @@
 package sstu.grivvus.notes.data
 
+import android.content.Context
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
@@ -10,9 +11,11 @@ import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import androidx.room.Update
 import java.sql.Date
 import java.time.Instant
 
@@ -69,6 +72,9 @@ interface NoteDao {
     @Query("select * from note")
     fun getAll(): List<Note>
 
+    @Query("select * from note where id = :id limit 1")
+    fun findNote(id: Int): Note
+
     @Query(
         "select * from note where note.id in (" +
                 "select note_id from note_tag where note_tag.tag_id = :tag)"
@@ -77,6 +83,9 @@ interface NoteDao {
 
     @Insert
     fun insertOne(note: Note)
+
+    @Update
+    fun updateOne(note: Note)
 
     @Delete
     fun delete(note: Note)
@@ -87,8 +96,14 @@ interface TagDao {
     @Query("select * from tag")
     fun getAll(): List<Tag>
 
+    @Query("select * from tag where id = :id limit 1")
+    fun findTag(id: Int): Tag
+
     @Insert
     fun insertOne(tag: Tag)
+
+    @Update
+    fun updateOne(tag: Tag)
 
     @Delete
     fun delete(tag: Tag)
@@ -99,4 +114,17 @@ interface TagDao {
 abstract class AppDatabase: RoomDatabase() {
     abstract fun noteDao(): NoteDao
     abstract fun tagDao(): TagDao
+}
+
+object DatabaseProvider {
+    lateinit var instance: AppDatabase
+
+    fun initDB(context: Context) {
+        instance = Room.databaseBuilder(context, AppDatabase::class.java, "notes_db").allowMainThreadQueries().build()
+    }
+
+    fun getDB(): AppDatabase {
+        return instance
+    }
+
 }

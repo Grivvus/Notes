@@ -1,6 +1,7 @@
 package sstu.grivvus.notes
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,8 +27,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import sstu.grivvus.notes.data.AddWhat
 import sstu.grivvus.notes.data.AppNote
 import sstu.grivvus.notes.data.fetchAllTags
+import sstu.grivvus.notes.data.getAllNotes
+import sstu.grivvus.notes.data.getAllTags
+import sstu.grivvus.notes.data.getNoteById
+import sstu.grivvus.notes.data.getTagById
 import sstu.grivvus.notes.ui.theme.NotesTheme
 import java.time.Instant
 
@@ -38,6 +44,16 @@ fun NotesApp() {
     NavHost(navController = navController, startDestination = "NotesScreen"){
         composable("NotesScreen") {NotesScreen(navController)}
         composable("TagsScreen") {TagsScreen(navController)}
+        composable("NoteView/{noteId}") { backStackEntry ->
+            val noteId = backStackEntry.arguments?.getString("noteId")?.toInt() ?: -1
+            NoteView(note = getNoteById(noteId), navController = navController)
+        }
+        composable("TagView/{tagId}") { backStackEntry ->
+            val tagId = backStackEntry.arguments?.getString("tagId")?.toInt() ?: -1
+            TagView(tag = getTagById(tagId), navController = navController)
+        }
+        composable("NewNoteScreen") { NewNoteScreen(navController) }
+        composable("NewTagScreen") { NewTagScreen(navController) }
     }
 }
 
@@ -48,23 +64,14 @@ fun NotesScreen(navController: NavController? = null) {
         Box(modifier = Modifier.fillMaxSize()) {
             Row(modifier = Modifier.verticalScroll(rememberScrollState()).absolutePadding(top = 85.dp)){
                 NotesList(
-                    content = listOf(
-                        AppNote(1, "note 1", Instant.now(), text = "some text", tags = listOf("tag1" ,"tag2")),
-                        AppNote(2, "note 2", Instant.now(), text = "some another text", tags = listOf("tag1", "tag3")),
-                        AppNote(1, "note 1", Instant.now(), text = "some text", tags = listOf("tag1" ,"tag2")),
-                        AppNote(2, "note 2", Instant.now(), text = "some another text", tags = listOf("tag1", "tag3")),
-                        AppNote(1, "note 1", Instant.now(), text = "some text", tags = listOf("tag1" ,"tag2")),
-                        AppNote(2, "note 2", Instant.now(), text = "some another text", tags = listOf("tag1", "tag3")),
-                        AppNote(1, "note 1", Instant.now(), text = "some text", tags = listOf("tag1" ,"tag2")),
-                        AppNote(2, "note 2", Instant.now(), text = "some another text", tags = listOf("tag1", "tag3")),
-                    )
+                    content = getAllNotes(), navController = navController
                 )
             }
             Row(modifier = Modifier.align(Alignment.TopCenter).background(Color.White)) {
                 MainPageHeader(navController)
             }
             Row(modifier = Modifier.align(Alignment.BottomCenter).background(Color.White)) {
-                NewButton({})
+                NewButton(navController, AddWhat.Note)
             }
         }
     }
@@ -74,7 +81,7 @@ fun NotesScreen(navController: NavController? = null) {
 @Preview(showBackground = true)
 @Composable
 fun TagsScreen(navController: NavController? = null) {
-    val tags = fetchAllTags()
+    val tags = getAllTags()
     NotesTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -92,6 +99,11 @@ fun TagsScreen(navController: NavController? = null) {
                             SuggestionChip(
                                 {}, {Text(text = tag.name, fontSize = 22.sp)},
                                 modifier = Modifier.padding(end = 10.dp)
+                                    .clickable(
+                                        enabled = true, onClick = {
+                                            navController!!.navigate("TagView/${tag.id}")
+                                        }
+                                    )
                             )
                         }
                     }
@@ -101,16 +113,8 @@ fun TagsScreen(navController: NavController? = null) {
                 MainPageHeader(navController)
             }
             Row(modifier = Modifier.align(Alignment.BottomCenter).background(Color.White)) {
-                NewButton({})
+                NewButton(navController, AddWhat.Tag)
             }
         }
     }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
 }
