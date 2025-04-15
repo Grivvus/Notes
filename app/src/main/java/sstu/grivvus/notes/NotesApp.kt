@@ -1,8 +1,6 @@
 package sstu.grivvus.notes
 
-import android.app.AlertDialog
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,16 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import sstu.grivvus.notes.data.AddWhat
-import sstu.grivvus.notes.data.AppNote
 import sstu.grivvus.notes.data.DatabaseInterface
-import sstu.grivvus.notes.data.tagsToStrings
 import sstu.grivvus.notes.ui.theme.NotesTheme
 
 @Composable
@@ -54,7 +49,6 @@ fun NotesApp() {
     }
 }
 
-@Preview(showBackground = true)
 @Composable
 fun NotesScreen(navController: NavController? = null) {
     NotesTheme {
@@ -77,7 +71,6 @@ fun NotesScreen(navController: NavController? = null) {
 }
 
 @OptIn(ExperimentalLayoutApi::class)
-@Preview(showBackground = true)
 @Composable
 fun TagsScreen(navController: NavController? = null) {
     val tags = DatabaseInterface.getAllTags()
@@ -111,48 +104,5 @@ fun TagsScreen(navController: NavController? = null) {
                 NewButton(navController, AddWhat.Tag)
             }
         }
-    }
-}
-
-object DialogBuilder {
-    lateinit var builder: AlertDialog.Builder
-    fun init(b: AlertDialog.Builder) {
-        builder = b
-    }
-
-    fun addTagDialog(note: AppNote) {
-        val tagsCopy = note.tags.toList()
-        val allTags = DatabaseInterface.getAllTags()
-        val allTagsText = tagsToStrings(allTags).toTypedArray()
-        val activated = BooleanArray(allTags.size, {false})
-        allTags.forEachIndexed { i, tag ->
-            if (tag in tagsCopy) {
-                activated[i] = true
-            }
-        }
-        builder
-            .setTitle("Выберите теги")
-            .setPositiveButton("Сохранить") { dialog, which ->
-                note.tags.clear()
-                for (i in activated.indices) {
-                    if (activated[i]){
-                        note.tags.addLast(allTags[i])
-                    }
-                }
-                DatabaseInterface.updateNoteTags(tagsCopy, note)
-            }
-            .setNegativeButton("Отмена") { dialog, which ->
-                dialog.cancel()
-            }
-            .setMultiChoiceItems(
-                allTagsText, activated
-            ) { dialog, which, isChecked ->
-                activated[which] = isChecked
-            }
-        builder.create()
-    }
-
-    fun show() {
-        builder.show()
     }
 }

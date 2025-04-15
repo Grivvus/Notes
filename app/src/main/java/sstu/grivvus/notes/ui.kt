@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -169,7 +168,6 @@ fun NoteView(
                         }
                         FlowRow {
                             for (tag in note.tags) {
-                                println("TAG: tag.name ${tag.name}")
                                 SuggestionChip(onClick = {}, label = { Text(tag.name) })
                             }
                         }
@@ -248,7 +246,7 @@ fun TagView(
                 Spacer(Modifier.height(30.dp))
                 Row {
                     Button(onClick = {
-                    DatabaseInterface.removeTag(tag)
+                        DatabaseInterface.removeTag(tag)
                         navController!!.navigate("TagsScreen")
                     }) { Text("Удалить") }
                 }
@@ -345,7 +343,7 @@ fun DatePickerDocked(noteDateState: MutableState<Long>) {
                 onDismissRequest = {
                     noteDateState.value = datePickerState.selectedDateMillis ?: 0
                     showDatePicker = false
-                                   },
+                },
                 alignment = Alignment.TopStart
             ) {
                 Box(
