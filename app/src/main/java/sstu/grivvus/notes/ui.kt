@@ -1,13 +1,13 @@
 package sstu.grivvus.notes
 
+import android.app.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,15 +20,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
@@ -41,8 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import sstu.grivvus.notes.data.AppNote
 import sstu.grivvus.notes.data.shortify
@@ -53,10 +50,12 @@ import androidx.navigation.NavController
 import sstu.grivvus.notes.data.AddWhat
 import sstu.grivvus.notes.data.AppTag
 import sstu.grivvus.notes.data.convertMillisToDate
+import sstu.grivvus.notes.data.getAllTags
 import sstu.grivvus.notes.data.removeNote
 import sstu.grivvus.notes.data.removeTag
 import sstu.grivvus.notes.data.saveNote
 import sstu.grivvus.notes.data.saveTag
+import sstu.grivvus.notes.data.tagsToStrings
 import java.time.Instant
 
 @Composable
@@ -139,6 +138,7 @@ fun NotesList(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NoteView(
     modifier: Modifier = Modifier,
@@ -186,6 +186,23 @@ fun NoteView(
                         }
                     }
                 }
+                Row {
+                    Column {
+                        Row {
+                            Button(onClick = {
+                                DialogBuilder.addTagDialog(note)
+                                DialogBuilder.show()
+                            }) {
+                                Text("Добавить тег")
+                            }
+                        }
+                        FlowRow {
+                            for (tag in note.tags) {
+                                SuggestionChip(onClick = {}, label = { Text(tag.name) })
+                            }
+                        }
+                    }
+                }
             }
         }
         Row(modifier = Modifier.align(Alignment.TopEnd).background(Color.White)) {
@@ -215,6 +232,8 @@ fun NoteView(
         }
     }
 }
+
+
 
 @Composable
 fun TagView(

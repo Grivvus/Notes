@@ -1,7 +1,6 @@
 package sstu.grivvus.notes.data
 
 import java.text.SimpleDateFormat
-import java.time.Instant
 import java.util.Date
 import java.util.Locale
 
@@ -14,20 +13,19 @@ fun shortify(str: String): String {
     return str
 }
 
-fun tagsToString(tag: List<String>?): String {
-    if (tag == null) {
+fun tagsToString(tags: List<AppTag>): String {
+    if (tags == null) {
         return "..."
     }
     return "..."
 }
 
-fun fetchAllTags(): List<AppTag> {
-    val tags = DatabaseProvider.getDB().tagDao().getAll()
-    val appTags: MutableList<AppTag> = mutableListOf()
+fun tagsToStrings(tags: List<AppTag>): List<String> {
+    val tagsText: MutableList<String> = mutableListOf()
     for (tag in tags) {
-        appTags.addLast(tagToAppTag(tag))
+        tagsText.addLast(tag.name)
     }
-    return appTags
+    return tagsText
 }
 
 enum class AddWhat {
@@ -93,6 +91,30 @@ fun getAllNotes(): List<AppNote> {
     val appNotes: MutableList<AppNote> = mutableListOf()
     for (note in notes) {
         appNotes.addLast(noteToAppNote(note))
+    }
+    return appNotes
+}
+
+fun getTagsOfNote(note: AppNote): AppNote {
+    if (note.id == null || note.id == -1){
+        return note
+    }
+    val tags = DatabaseProvider.getDB().noteTagDao().findTagsByNoteId(note.id)
+    for (tag in tags) {
+        note.tags.addLast(AppTag(tag.id, tag.name))
+    }
+    return note
+}
+
+fun getNotesByTag(tag: AppTag): List<AppNote> {
+    val notes = DatabaseProvider.getDB().noteTagDao().findNotesByTagId(tag.id!!)
+    val appNotes: MutableList<AppNote> = mutableListOf()
+    for (note in notes) {
+        appNotes.addLast(
+            AppNote(
+                note.id, note.title, note.dateOfCreation, note.text ?: ""
+            )
+        )
     }
     return appNotes
 }

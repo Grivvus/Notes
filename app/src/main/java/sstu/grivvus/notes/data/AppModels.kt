@@ -7,7 +7,7 @@ data class AppNote(
     var title: String = "",
     var dateOfCreation: Instant? = null,
     var text: String = "",
-    val tags: MutableList<String>? = null
+    val tags: MutableList<AppTag> = mutableListOf()
 )
 
 data class AppTag(

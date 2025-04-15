@@ -1,5 +1,8 @@
 package sstu.grivvus.notes
 
+import android.app.AlertDialog
+import android.app.Dialog
+import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,11 +32,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import sstu.grivvus.notes.data.AddWhat
 import sstu.grivvus.notes.data.AppNote
-import sstu.grivvus.notes.data.fetchAllTags
 import sstu.grivvus.notes.data.getAllNotes
 import sstu.grivvus.notes.data.getAllTags
 import sstu.grivvus.notes.data.getNoteById
 import sstu.grivvus.notes.data.getTagById
+import sstu.grivvus.notes.data.tagsToStrings
 import sstu.grivvus.notes.ui.theme.NotesTheme
 import java.time.Instant
 
@@ -116,5 +119,34 @@ fun TagsScreen(navController: NavController? = null) {
                 NewButton(navController, AddWhat.Tag)
             }
         }
+    }
+}
+
+object DialogBuilder {
+    lateinit var builder: AlertDialog.Builder
+    fun init(b: AlertDialog.Builder) {
+        builder = b
+    }
+
+    fun addTagDialog(note: AppNote) {
+        val tagsCopy = note.tags.toList()
+        val allTags = getAllTags()
+        val allTagsText = tagsToStrings(allTags).toTypedArray()
+        builder
+            .setTitle("Выберите теги")
+            .setPositiveButton("Сохранить") { dialog, which ->
+
+            }
+            .setNegativeButton("Отмена") { dialog, which ->
+
+            }
+            .setMultiChoiceItems(allTagsText, null) { dialog, which, is_checked ->
+
+            }
+        builder.create()
+    }
+
+    fun show() {
+        builder.show()
     }
 }

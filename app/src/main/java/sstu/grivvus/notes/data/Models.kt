@@ -109,11 +109,26 @@ interface TagDao {
     fun delete(tag: Tag)
 }
 
+@Dao
+interface NoteTagDao {
+    @Query("select * from tag where id in" +
+            "(select tag_id from note_tag where note_id = :id)")
+    fun findTagsByNoteId(id: Int): List<Tag>
+
+    @Query("select * from note where id in" +
+            "(select note_id from note_tag where tag_id = :id)")
+    fun findNotesByTagId(id: Int): List<Note>
+
+    @Insert
+    fun insertOne(noteTag: NoteTag)
+}
+
 @Database(entities = [Note::class, Tag::class, NoteTag::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase: RoomDatabase() {
     abstract fun noteDao(): NoteDao
     abstract fun tagDao(): TagDao
+    abstract fun noteTagDao(): NoteTagDao
 }
 
 object DatabaseProvider {
