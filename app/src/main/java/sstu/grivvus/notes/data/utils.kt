@@ -14,10 +14,16 @@ fun shortify(str: String): String {
 }
 
 fun tagsToString(tags: List<AppTag>): String {
-    if (tags == null) {
-        return "..."
+    if (tags == null || tags.size == 0) {
+        return ""
     }
-    return "..."
+    if (tags.size > 2) {
+        return "${tags[0].name}, ${tags[1].name}, ..."
+    }
+    if (tags.size == 1){
+        return tags[0].name
+    }
+    return "${tags[0].name}, ${tags[1].name}"
 }
 
 fun tagsToStrings(tags: List<AppTag>): List<String> {
@@ -32,89 +38,109 @@ enum class AddWhat {
     Note, Tag
 }
 
-fun getNoteById(id: Int): AppNote {
-    if (id == -1) {
-        return AppNote(null)
-    }
-    return noteToAppNote(DatabaseProvider.getDB().noteDao().findNote(id))
-}
+object DatabaseInterface {
 
-fun getTagById(id: Int): AppTag {
-    if (id == -1){
-        return AppTag(null)
+    fun getNoteById(id: Int): AppNote {
+        if (id == -1) {
+            return AppNote(null)
+        }
+        val noteApp = noteToAppNote(DatabaseProvider.getDB().noteDao().findNote(id))
+        getTagsOfNote(noteApp)
+        return noteApp
     }
-    return tagToAppTag(DatabaseProvider.getDB().tagDao().findTag(id))
-}
 
-fun removeTag(tag: AppTag) {
-    if (tag.id == null) {
-        return
+    fun getTagById(id: Int): AppTag {
+        if (id == -1){
+            return AppTag(null)
+        }
+        return tagToAppTag(DatabaseProvider.getDB().tagDao().findTag(id))
     }
-    DatabaseProvider.getDB().tagDao().delete(appTagToTag(tag))
-}
 
-fun saveTag(tag: AppTag) {
-    if (tag.id == null || tag.id == -1){
-        DatabaseProvider.getDB().tagDao().insertOne(appTagToTag(tag))
-    } else {
-        DatabaseProvider.getDB().tagDao().updateOne(appTagToTag(tag))
+    fun removeTag(tag: AppTag) {
+        if (tag.id == null) {
+            return
+        }
+        DatabaseProvider.getDB().tagDao().delete(appTagToTag(tag))
     }
-}
 
-fun getAllTags(): List<AppTag> {
-    val tags = DatabaseProvider.getDB().tagDao().getAll()
-    val appTags: MutableList<AppTag> = mutableListOf()
-    for (tag in tags) {
-        appTags.addLast(tagToAppTag(tag))
+    fun saveTag(tag: AppTag) {
+        if (tag.id == null || tag.id == -1){
+            DatabaseProvider.getDB().tagDao().insertOne(appTagToTag(tag))
+        } else {
+            DatabaseProvider.getDB().tagDao().updateOne(appTagToTag(tag))
+        }
     }
-    return appTags
-}
 
-fun removeNote(note: AppNote) {
-    if (note.id == null) {
-        return
+    fun getAllTags(): List<AppTag> {
+        val tags = DatabaseProvider.getDB().tagDao().getAll()
+        val appTags: MutableList<AppTag> = mutableListOf()
+        for (tag in tags) {
+            appTags.addLast(tagToAppTag(tag))
+        }
+        return appTags
     }
-    DatabaseProvider.getDB().noteDao().delete(appNoteToNote(note))
-}
 
-fun saveNote(note: AppNote) {
-    if (note.id == null || note.id == -1) {
-        DatabaseProvider.getDB().noteDao().insertOne(appNoteToNote(note))
-    } else {
-        println("note ${note.id} updated")
-        DatabaseProvider.getDB().noteDao().updateOne(appNoteToNote(note))
+    fun removeNote(note: AppNote) {
+        if (note.id == null) {
+            return
+        }
+        DatabaseProvider.getDB().noteDao().delete(appNoteToNote(note))
     }
-}
 
-fun getAllNotes(): List<AppNote> {
-    val notes = DatabaseProvider.getDB().noteDao().getAll()
-    val appNotes: MutableList<AppNote> = mutableListOf()
-    for (note in notes) {
-        appNotes.addLast(noteToAppNote(note))
+    fun saveNote(note: AppNote) {
+        if (note.id == null || note.id == -1) {
+            DatabaseProvider.getDB().noteDao().insertOne(appNoteToNote(note))
+        } else {
+            println("note ${note.id} updated")
+            DatabaseProvider.getDB().noteDao().updateOne(appNoteToNote(note))
+        }
     }
-    return appNotes
-}
 
-fun getTagsOfNote(note: AppNote): AppNote {
-    if (note.id == null || note.id == -1){
+    fun getAllNotes(): List<AppNote> {
+        val notes = DatabaseProvider.getDB().noteDao().getAll()
+        val appNotes: MutableList<AppNote> = mutableListOf()
+        for (note in notes) {
+            val appNote = noteToAppNote(note)
+            getTagsOfNote(appNote)
+            println(appNote.tags)
+            appNotes.addLast(appNote)
+        }
+        return appNotes
+    }
+
+    fun getTagsOfNote(note: AppNote): AppNote {
+        if (note.id == null || note.id == -1){
+            return note
+        }
+        val tags = DatabaseProvider.getDB().noteTagDao().findTagsByNoteId(note.id)
+        for (tag in tags) {
+            note.tags.addLast(AppTag(tag.id, tag.name))
+        }
         return note
     }
-    val tags = DatabaseProvider.getDB().noteTagDao().findTagsByNoteId(note.id)
-    for (tag in tags) {
-        note.tags.addLast(AppTag(tag.id, tag.name))
-    }
-    return note
-}
 
-fun getNotesByTag(tag: AppTag): List<AppNote> {
-    val notes = DatabaseProvider.getDB().noteTagDao().findNotesByTagId(tag.id!!)
-    val appNotes: MutableList<AppNote> = mutableListOf()
-    for (note in notes) {
-        appNotes.addLast(
-            AppNote(
-                note.id, note.title, note.dateOfCreation, note.text ?: ""
+    fun getNotesByTag(tag: AppTag): List<AppNote> {
+        val notes = DatabaseProvider.getDB().noteTagDao().findNotesByTagId(tag.id!!)
+        val appNotes: MutableList<AppNote> = mutableListOf()
+        for (note in notes) {
+            appNotes.addLast(
+                AppNote(
+                    note.id, note.title, note.dateOfCreation, note.text ?: ""
+                )
             )
-        )
+        }
+        return appNotes
     }
-    return appNotes
+
+    fun updateNoteTags(oldTags: List<AppTag>, note: AppNote) {
+        for (oldTag in oldTags) {
+            if (oldTag !in note.tags) {
+                DatabaseProvider.getDB().noteTagDao().deleteOne(oldTag.id!!, note.id!!)
+            }
+        }
+        for (newTag in note.tags) {
+            println(newTag)
+            DatabaseProvider.getDB().noteTagDao().insertOne(note.id!!, newTag.id!!)
+        }
+    }
 }

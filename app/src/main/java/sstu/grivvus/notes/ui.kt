@@ -1,6 +1,5 @@
 package sstu.grivvus.notes
 
-import android.app.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,13 +49,8 @@ import androidx.compose.ui.window.Popup
 import androidx.navigation.NavController
 import sstu.grivvus.notes.data.AddWhat
 import sstu.grivvus.notes.data.AppTag
+import sstu.grivvus.notes.data.DatabaseInterface
 import sstu.grivvus.notes.data.convertMillisToDate
-import sstu.grivvus.notes.data.getAllTags
-import sstu.grivvus.notes.data.removeNote
-import sstu.grivvus.notes.data.removeTag
-import sstu.grivvus.notes.data.saveNote
-import sstu.grivvus.notes.data.saveTag
-import sstu.grivvus.notes.data.tagsToStrings
 import java.time.Instant
 
 @Composable
@@ -109,31 +104,7 @@ fun NotesList(
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(3.dp)) {
         for (note in content) {
-            Row(
-                modifier = modifier.padding(1.dp)
-                    .clickable(enabled = true, onClick = {
-                        println("clicked")
-                        navController!!.navigate("NoteView/${note.id}")
-                    })
-            ) {
-                Column {
-                    HorizontalDivider(thickness = 2.dp)
-                    Row(modifier = modifier) {
-                        Text(convertMillisToDate(note.dateOfCreation?.toEpochMilli() ?: Instant.now().toEpochMilli()))
-                    }
-                    Row(modifier = modifier) {
-                        Text(text = note.title, fontWeight = FontWeight.Bold)
-                    }
-                    Row(modifier = modifier) {
-                        Text(shortify(note.text))
-                    }
-                    Row(modifier = modifier) {
-                        Text(tagsToString(note.tags))
-                    }
-                    HorizontalDivider(thickness = 2.dp)
-                    Spacer(modifier = modifier.height(5.dp))
-                }
-            }
+            FoldedNote(note, navController)
         }
     }
 }
@@ -198,6 +169,7 @@ fun NoteView(
                         }
                         FlowRow {
                             for (tag in note.tags) {
+                                println("TAG: tag.name ${tag.name}")
                                 SuggestionChip(onClick = {}, label = { Text(tag.name) })
                             }
                         }
@@ -210,7 +182,7 @@ fun NoteView(
                 Spacer(Modifier.height(30.dp))
                 Row {
                     Button(onClick = {
-                        removeNote(note)
+                        DatabaseInterface.removeNote(note)
                         navController!!.navigate("NotesScreen")
                     }) { Text("Удалить") }
                 }
@@ -222,7 +194,7 @@ fun NoteView(
                     note.title = noteTitle
                     note.text = noteText
                     note.dateOfCreation = Instant.ofEpochMilli(noteDateState.value)
-                    saveNote(note)
+                    DatabaseInterface.saveNote(note)
                     navController!!.navigate("NotesScreen")
                 }) { Text("Сохранить") }
             }
@@ -241,10 +213,11 @@ fun TagView(
     navController: NavController?
 ) {
     var tagName by remember { mutableStateOf(tag.name) }
+    val thisNotes = DatabaseInterface.getNotesByTag(tag)
 
     Box(modifier = modifier.fillMaxSize()) {
-        Row(modifier = modifier.padding(top=100.dp, bottom = 220.dp).fillMaxSize()) {
-            Column(verticalArrangement = Arrangement.SpaceAround,
+        Row(modifier = modifier.padding(top=100.dp, bottom = 100.dp).fillMaxSize()) {
+            Column(verticalArrangement = Arrangement.Top,
                 modifier = Modifier.fillMaxSize()) {
                 Row{
                     Column(modifier = modifier.fillMaxWidth()) {
@@ -258,6 +231,16 @@ fun TagView(
                         }
                     }
                 }
+                Row {
+                    Spacer(Modifier.height(30.dp))
+                }
+                Row {
+                    Column() {
+                        for (note in thisNotes) {
+                            FoldedNote(note, navController = navController)
+                        }
+                    }
+                }
             }
         }
         Row(modifier = Modifier.align(Alignment.TopEnd).background(Color.White)) {
@@ -265,7 +248,7 @@ fun TagView(
                 Spacer(Modifier.height(30.dp))
                 Row {
                     Button(onClick = {
-                    removeTag(tag)
+                    DatabaseInterface.removeTag(tag)
                         navController!!.navigate("TagsScreen")
                     }) { Text("Удалить") }
                 }
@@ -275,13 +258,44 @@ fun TagView(
             Column {
                 Button(onClick = {
                     tag.name = tagName
-                    saveTag(tag)
+                    DatabaseInterface.saveTag(tag)
                     navController!!.navigate("TagsScreen")
                 }) { Text("Сохранить") }
             }
             Column {
                 Button(onClick = {navController!!.navigate("TagsScreen")}) { Text("Отмена") }
             }
+        }
+    }
+}
+
+@Composable
+fun FoldedNote(
+    note: AppNote, navController: NavController? = null,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.padding(1.dp)
+            .clickable(enabled = true, onClick = {
+                navController!!.navigate("NoteView/${note.id}")
+            })
+    ) {
+        Column {
+            HorizontalDivider(thickness = 2.dp)
+            Row(modifier = modifier) {
+                Text(convertMillisToDate(note.dateOfCreation?.toEpochMilli() ?: Instant.now().toEpochMilli()))
+            }
+            Row(modifier = modifier) {
+                Text(text = note.title, fontWeight = FontWeight.Bold)
+            }
+            Row(modifier = modifier) {
+                Text(shortify(note.text))
+            }
+            Row(modifier = modifier) {
+                Text(tagsToString(note.tags))
+            }
+            HorizontalDivider(thickness = 2.dp)
+            Spacer(modifier = modifier.height(5.dp))
         }
     }
 }

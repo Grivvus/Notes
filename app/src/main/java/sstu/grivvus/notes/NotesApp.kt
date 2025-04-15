@@ -1,8 +1,6 @@
 package sstu.grivvus.notes
 
 import android.app.AlertDialog
-import android.app.Dialog
-import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,13 +30,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import sstu.grivvus.notes.data.AddWhat
 import sstu.grivvus.notes.data.AppNote
-import sstu.grivvus.notes.data.getAllNotes
-import sstu.grivvus.notes.data.getAllTags
-import sstu.grivvus.notes.data.getNoteById
-import sstu.grivvus.notes.data.getTagById
+import sstu.grivvus.notes.data.DatabaseInterface
 import sstu.grivvus.notes.data.tagsToStrings
 import sstu.grivvus.notes.ui.theme.NotesTheme
-import java.time.Instant
 
 @Composable
 fun NotesApp() {
@@ -49,11 +43,11 @@ fun NotesApp() {
         composable("TagsScreen") {TagsScreen(navController)}
         composable("NoteView/{noteId}") { backStackEntry ->
             val noteId = backStackEntry.arguments?.getString("noteId")?.toInt() ?: -1
-            NoteView(note = getNoteById(noteId), navController = navController)
+            NoteView(note = DatabaseInterface.getNoteById(noteId), navController = navController)
         }
         composable("TagView/{tagId}") { backStackEntry ->
             val tagId = backStackEntry.arguments?.getString("tagId")?.toInt() ?: -1
-            TagView(tag = getTagById(tagId), navController = navController)
+            TagView(tag = DatabaseInterface.getTagById(tagId), navController = navController)
         }
         composable("NewNoteScreen") { NewNoteScreen(navController) }
         composable("NewTagScreen") { NewTagScreen(navController) }
@@ -65,9 +59,11 @@ fun NotesApp() {
 fun NotesScreen(navController: NavController? = null) {
     NotesTheme {
         Box(modifier = Modifier.fillMaxSize()) {
-            Row(modifier = Modifier.verticalScroll(rememberScrollState()).absolutePadding(top = 85.dp)){
+            Row(modifier = Modifier.verticalScroll(rememberScrollState())
+                .absolutePadding(top = 85.dp, bottom = 85.dp)
+            ) {
                 NotesList(
-                    content = getAllNotes(), navController = navController
+                    content = DatabaseInterface.getAllNotes(), navController = navController
                 )
             }
             Row(modifier = Modifier.align(Alignment.TopCenter).background(Color.White)) {
@@ -84,7 +80,7 @@ fun NotesScreen(navController: NavController? = null) {
 @Preview(showBackground = true)
 @Composable
 fun TagsScreen(navController: NavController? = null) {
-    val tags = getAllTags()
+    val tags = DatabaseInterface.getAllTags()
     NotesTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -100,13 +96,9 @@ fun TagsScreen(navController: NavController? = null) {
                     ) {
                         for (tag in tags) {
                             SuggestionChip(
-                                {}, {Text(text = tag.name, fontSize = 22.sp)},
+                                { navController!!.navigate("TagView/${tag.id}") },
+                                {Text(text = tag.name, fontSize = 22.sp)},
                                 modifier = Modifier.padding(end = 10.dp)
-                                    .clickable(
-                                        enabled = true, onClick = {
-                                            navController!!.navigate("TagView/${tag.id}")
-                                        }
-                                    )
                             )
                         }
                     }
@@ -130,18 +122,32 @@ object DialogBuilder {
 
     fun addTagDialog(note: AppNote) {
         val tagsCopy = note.tags.toList()
-        val allTags = getAllTags()
+        val allTags = DatabaseInterface.getAllTags()
         val allTagsText = tagsToStrings(allTags).toTypedArray()
+        val activated = BooleanArray(allTags.size, {false})
+        allTags.forEachIndexed { i, tag ->
+            if (tag in tagsCopy) {
+                activated[i] = true
+            }
+        }
         builder
             .setTitle("Выберите теги")
             .setPositiveButton("Сохранить") { dialog, which ->
-
+                note.tags.clear()
+                for (i in activated.indices) {
+                    if (activated[i]){
+                        note.tags.addLast(allTags[i])
+                    }
+                }
+                DatabaseInterface.updateNoteTags(tagsCopy, note)
             }
             .setNegativeButton("Отмена") { dialog, which ->
-
+                dialog.cancel()
             }
-            .setMultiChoiceItems(allTagsText, null) { dialog, which, is_checked ->
-
+            .setMultiChoiceItems(
+                allTagsText, activated
+            ) { dialog, which, isChecked ->
+                activated[which] = isChecked
             }
         builder.create()
     }

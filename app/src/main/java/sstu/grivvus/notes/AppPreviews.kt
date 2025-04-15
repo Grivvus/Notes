@@ -3,6 +3,7 @@ package sstu.grivvus.notes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import sstu.grivvus.notes.data.AddWhat
+import sstu.grivvus.notes.data.AppTag
 
 @Preview(showBackground = true)
 @Composable

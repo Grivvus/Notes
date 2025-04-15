@@ -119,8 +119,11 @@ interface NoteTagDao {
             "(select note_id from note_tag where tag_id = :id)")
     fun findNotesByTagId(id: Int): List<Note>
 
-    @Insert
-    fun insertOne(noteTag: NoteTag)
+    @Query("insert or ignore into note_tag (note_id, tag_id) values (:noteId, :tagId)")
+    fun insertOne(noteId: Int, tagId: Int)
+
+    @Query("delete from note_tag where note_id = :noteId and tag_id = :tagId")
+    fun deleteOne(tagId: Int, noteId: Int)
 }
 
 @Database(entities = [Note::class, Tag::class, NoteTag::class], version = 1)
