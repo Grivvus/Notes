@@ -51,6 +51,7 @@ import sstu.grivvus.notes.data.AppTag
 import sstu.grivvus.notes.data.DatabaseInterface
 import sstu.grivvus.notes.data.convertMillisToDate
 import java.time.Instant
+import android.util.Log
 
 @Composable
 fun NewButton(
@@ -180,7 +181,10 @@ fun NoteView(
                 Spacer(Modifier.height(30.dp))
                 Row {
                     Button(onClick = {
+                        Log.e("NoteView", "before remove")
                         DatabaseInterface.removeNote(note)
+                        Log.e("NoteView", "after remove go to notes")
+                        println(navController)
                         navController!!.navigate("NotesScreen")
                     }) { Text("Удалить") }
                 }

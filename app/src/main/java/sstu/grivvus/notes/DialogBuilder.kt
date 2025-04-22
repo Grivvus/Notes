@@ -30,7 +30,9 @@ object DialogBuilder {
                         note.tags.addLast(allTags[i])
                     }
                 }
-                DatabaseInterface.updateNoteTags(tagsCopy, note)
+                if (note.id != null) {
+                    DatabaseInterface.updateNoteTags(tagsCopy, note)
+                }
             }
             .setNegativeButton("Отмена") { dialog, which ->
                 dialog.cancel()

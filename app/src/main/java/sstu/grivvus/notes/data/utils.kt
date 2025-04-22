@@ -1,6 +1,7 @@
 package sstu.grivvus.notes.data
 
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.Date
 import java.util.Locale
 
@@ -44,7 +45,11 @@ object DatabaseInterface {
         if (id == -1) {
             return AppNote(null)
         }
-        val noteApp = noteToAppNote(DatabaseProvider.getDB().noteDao().findNote(id))
+        val note = DatabaseProvider.getDB().noteDao().findNote(id)
+        if (note == null) {
+            return AppNote(null)
+        }
+        val noteApp = noteToAppNote(note)
         getTagsOfNote(noteApp)
         return noteApp
     }
@@ -53,13 +58,18 @@ object DatabaseInterface {
         if (id == -1){
             return AppTag(null)
         }
-        return tagToAppTag(DatabaseProvider.getDB().tagDao().findTag(id))
+        val tag = DatabaseProvider.getDB().tagDao().findTag(id)
+        if (tag == null) {
+            return AppTag(null)
+        }
+        return tagToAppTag(tag)
     }
 
     fun removeTag(tag: AppTag) {
         if (tag.id == null) {
             return
         }
+        DatabaseProvider.getDB().noteTagDao().deleteByTag(tag.id)
         DatabaseProvider.getDB().tagDao().delete(appTagToTag(tag))
     }
 
@@ -84,12 +94,20 @@ object DatabaseInterface {
         if (note.id == null) {
             return
         }
-        DatabaseProvider.getDB().noteDao().delete(appNoteToNote(note))
+        DatabaseProvider.getDB().noteDao().delete(note.id)
     }
 
     fun saveNote(note: AppNote) {
         if (note.id == null || note.id == -1) {
             DatabaseProvider.getDB().noteDao().insertOne(appNoteToNote(note))
+            val curId = DatabaseProvider.getDB().noteDao().getNoteByAll(
+                note.title, note.dateOfCreation ?: Instant.now(), note.text
+            )
+
+            updateNoteTags(
+                listOf<AppTag>(),
+                AppNote(curId, note.title, note.dateOfCreation, note.text, note.tags)
+            )
         } else {
             println("note ${note.id} updated")
             DatabaseProvider.getDB().noteDao().updateOne(appNoteToNote(note))
@@ -120,7 +138,7 @@ object DatabaseInterface {
     }
 
     fun getNotesByTag(tag: AppTag): List<AppNote> {
-        val notes = DatabaseProvider.getDB().noteTagDao().findNotesByTagId(tag.id!!)
+        val notes = DatabaseProvider.getDB().noteTagDao().findNotesByTagId(tag.id ?: -1)
         val appNotes: MutableList<AppNote> = mutableListOf()
         for (note in notes) {
             appNotes.addLast(
@@ -135,11 +153,10 @@ object DatabaseInterface {
     fun updateNoteTags(oldTags: List<AppTag>, note: AppNote) {
         for (oldTag in oldTags) {
             if (oldTag !in note.tags) {
-                DatabaseProvider.getDB().noteTagDao().deleteOne(oldTag.id!!, note.id!!)
+                DatabaseProvider.getDB().noteTagDao().deleteOne(oldTag.id!!, note.id ?: -1)
             }
         }
         for (newTag in note.tags) {
-            println(newTag)
             DatabaseProvider.getDB().noteTagDao().insertOne(note.id!!, newTag.id!!)
         }
     }

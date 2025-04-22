@@ -28,14 +28,19 @@ import androidx.navigation.compose.composable
 import sstu.grivvus.notes.data.AddWhat
 import sstu.grivvus.notes.data.DatabaseInterface
 import sstu.grivvus.notes.ui.theme.NotesTheme
+import android.util.Log
 
 @Composable
 fun NotesApp() {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "NotesScreen"){
-        composable("NotesScreen") {NotesScreen(navController)}
-        composable("TagsScreen") {TagsScreen(navController)}
+        composable("NotesScreen") {
+            NotesScreen(navController)
+        }
+        composable("TagsScreen") {
+            TagsScreen(navController)
+        }
         composable("NoteView/{noteId}") { backStackEntry ->
             val noteId = backStackEntry.arguments?.getString("noteId")?.toInt() ?: -1
             NoteView(note = DatabaseInterface.getNoteById(noteId), navController = navController)
